@@ -43,13 +43,13 @@
   :type 'boolean
   :package-version '(org-inkscape . "0.1.0"))
 
-(defcustom org-inkscape-image-directory ".xournalpp/"
+(defcustom org-inkscape-image-directory ".org-inkscape/"
   "Default directory in which to generate images."
   :group 'org-inkscape
   :type 'string
   :package-version '(org-inkscape . "0.1.0"))
 
-(defcustom org-inkscape-template-path "~/.org-inkscape/template.svg"
+(defcustom org-inkscape-template-path "~/.config/inkscape/templates/org-inkscape.svg"
   "Default template for new images."
   :group 'org-inkscape
   :type 'string
@@ -160,8 +160,7 @@ TEMPLATE is the path of the template to use."
    (let ((path
           (if (xor current-prefix-arg org-inkscape-ask-for-file-name)
               (read-file-name "New inkscape file: ")
-            (funcall org-inkscape-generate-file-function (buffer-file-name))
-            (expand-file-name (concat ".org-inkscape/" (uuidgen-1) ".xopp"))))
+            (funcall org-inkscape-generate-file-function (buffer-file-name))))
          (desc (read-string "Description: ")))
      (list path desc)))
    (org-inkscape-open-or-make-image path)
