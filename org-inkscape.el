@@ -83,28 +83,35 @@ Takes 1 argument, the path of the current buffer."
 
 (defun org-inkscape--generate-filename (_filename)
   "Generate a unique filename."
-  (expand-file-name (concat org-inkscape-image-directory (uuidgen-1) ".xopp")))
+  (expand-file-name (concat org-inkscape-image-directory (uuidgen-1) ".svg")))
 
 (defun org-inkscape--make-new-image (path)
   "Create an inkscape image at PATH."
   (unless (file-exists-p (f-dirname path))
     (mkdir (f-dirname path)))
   (let* ((default-directory (expand-file-name (f-dirname path)))
-         (fname (expand-file-name (f-filename path)))
+         (fname (f-filename path))
          (cmd (format-spec
                org-inkscape-create-image-command
                `((?t . ,(expand-file-name org-inkscape-template-path))
                  (?p . ,fname)))))
-    (save-window-excursion
-      (async-shell-command cmd))))
+    (message "Command: %s" cmd)
+    (with-temp-buffer
+      (save-window-excursion
+        (let ((async-shell-command-buffer 'new-buffer)
+              (async-shell-command-display-buffer t))
+          (async-shell-command cmd))))))
 
 (defun org-inkscape--open-image (path)
   "Open an inkscape image at PATH."
   (let* ((default-directory (expand-file-name (f-dirname path)))
          (fname (f-filename path))
          (cmd (format org-inkscape-open-image-command fname)))
-    (save-window-excursion
-      (async-shell-command cmd))))
+    (with-temp-buffer
+      (save-window-excursion
+        (let ((async-shell-command-buffer 'new-buffer)
+              (async-shell-command-display-buffer t))
+          (async-shell-command cmd))))))
 
 (defun org-inkscape-open-or-make-image (path)
   "Open an image at PATH if it exists otherwise create it."
