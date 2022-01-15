@@ -89,8 +89,8 @@ Takes 1 argument, the path of the current buffer."
   "Create an inkscape image at PATH."
   (unless (file-exists-p (f-dirname path))
     (mkdir (f-dirname path)))
-  (let* ((default-directory (f-dirname path))
-         (fname (f-filename path))
+  (let* ((default-directory (expand-file-name (f-dirname path)))
+         (fname (expand-file-name (f-filename path)))
          (cmd (format-spec
                org-inkscape-create-image-command
                `((?t . ,(expand-file-name org-inkscape-template-path))
@@ -100,7 +100,7 @@ Takes 1 argument, the path of the current buffer."
 
 (defun org-inkscape--open-image (path)
   "Open an inkscape image at PATH."
-  (let* ((default-directory (f-dirname path))
+  (let* ((default-directory (expand-file-name (f-dirname path)))
          (fname (f-filename path))
          (cmd (format org-inkscape-open-image-command fname)))
     (save-window-excursion
@@ -161,7 +161,7 @@ TEMPLATE is the path of the template to use."
           (if (xor current-prefix-arg org-inkscape-ask-for-file-name)
               (read-file-name "New inkscape file: ")
             (funcall org-inkscape-generate-file-function (buffer-file-name))
-            (expand-file-name (concat ".xournalpp/" (uuidgen-1) ".xopp"))))
+            (expand-file-name (concat ".org-inkscape/" (uuidgen-1) ".xopp"))))
          (desc (read-string "Description: ")))
      (list path desc)))
    (org-inkscape-open-or-make-image path)
@@ -207,7 +207,6 @@ TEMPLATE is the path of the template to use."
     map)
   "Keymap for Embark minibuffer actions.")
 
-;;;###autoload
 (with-eval-after-load 'embark
   (add-to-list 'embark-target-finders 'org-inkscape-link-finder)
   (set-keymap-parent org-inkscape-map embark-general-map)
