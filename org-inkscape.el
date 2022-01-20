@@ -55,6 +55,12 @@
   :type 'string
   :package-version '(org-inkscape . "0.1.0"))
 
+(defcustom org-inkscape-export-convert #'identity
+  "Convert svg filename to desired filename on export."
+  :group 'org-inkscape
+  :type 'function
+  :package-version '(org-inkscape . "0.1.0"))
+
 (defcustom org-inkscape-create-image-command
 "inkscape --actions=\"file-new:%t; export-area-page; export-filename:%p; export-do;\""
   "Command to create new inkscape images.
@@ -148,15 +154,36 @@ BEGIN is the start point, END is the end point, and PATH is the image path."
 
 (defun org-inkscape-preprocess (_backend)
   "Preprocessing function to run in `org-export-before-processing-hook'."
-  (let ((links (reverse (org-element-map (org-element-parse-buffer) 'link
-			  (lambda (link)
-			    (when (string= (org-element-property :type link) "inkscape")
-			      link))))))
-    (cl-loop for link in links
-	     do
-	     (goto-char (org-element-property :begin link))
-	     (re-search-forward "inkscape:" (org-element-property :end link))
-	     (replace-match "file:"))))
+  (mapcar
+   (lambda (link)
+     (let* ((begin (org-element-property :begin link))
+            (end (org-element-property :end link))
+            (path (org-element-property :path link))
+            (description (let ((b (org-element-property  :contents-begin link))
+                               (e (org-element-property :contents-end link)))
+                           (if (and b e) (buffer-substring b e) nil))))
+       (delete-region begin end)
+       (goto-char begin)
+       (insert
+        (org-link-make-string
+         (concat
+          "file:"
+          (funcall org-inkscape-export-convert path))
+         description))))
+   (reverse (org-element-map (org-element-parse-buffer) 'link
+              (lambda (link)
+                (when (string= (org-element-property :type link) "inkscape")
+                  link))))))
+
+(defun org-inkscape--export-convert-ext (path ext)
+  "Convert svg at PATH to EXT and returns the new path. Utility function
+for use with `org-inkscape-export-convert'"
+  (let* ((output (concat (file-name-sans-extension path) ext))
+         (cmd (format "inkscape --export-filename=%s %s" output path)))
+    (with-temp-buffer
+      (save-window-excursion
+        (shell-command cmd)))
+    output))
 
 ;;;###autoload
 (defun org-inkscape-insert-new-image (path desc)
